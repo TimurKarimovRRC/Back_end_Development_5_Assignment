@@ -1,75 +1,148 @@
-# Security Configuration
+# SECURITY.md
 
-This document describes the security measures implemented in this API, specifically the Helmet and CORS configurations.
+## Overview
 
----
-
-## Helmet
-
-Helmet is an Express middleware that sets HTTP response headers to protect the application from common web vulnerabilities.
-
-**Configuration file:** `src/config/helmetOptions.ts`
-
-### Applied Headers
-
-| Option | Value | Purpose |
-|---|---|---|
-| `contentSecurityPolicy` | `false` | Disabled — Swagger UI requires inline scripts and styles that would be blocked by a strict CSP |
-| `crossOriginEmbedderPolicy` | `false` | Disabled — required to allow Swagger UI assets to load correctly |
-| `frameguard` | `action: "deny"` | Sets `X-Frame-Options: DENY` — prevents the app from being embedded in an iframe, blocking clickjacking attacks |
-| `hidePoweredBy` | `true` | Removes the `X-Powered-By: Express` header — avoids exposing the framework to potential attackers |
-| `noSniff` | `true` | Sets `X-Content-Type-Options: nosniff` — prevents browsers from MIME-sniffing responses away from the declared content type |
-| `referrerPolicy` | `policy: "no-referrer"` | Sets `Referrer-Policy: no-referrer` — prevents the browser from sending the `Referer` header, reducing information leakage |
-| `hsts` | `maxAge: 31536000, includeSubDomains, preload` (production only) | Sets `Strict-Transport-Security` — forces HTTPS for 1 year including subdomains; disabled in development to allow plain HTTP |
-
-### Why Helmet
-
-HTTP security headers are a first-line defence against a wide range of attacks including clickjacking, MIME-type confusion, and protocol downgrade attacks. Helmet automates the correct configuration of these headers so they are applied consistently on every response without manual header management.
-
-### Sources
-
-- Helmet.js official documentation: https://helmetjs.github.io/
-- OWASP Secure Headers Project: https://owasp.org/www-project-secure-headers/
+For this project, I used custom Helmet.js and CORS settings instead of relying only on the default middleware behavior. I wanted the API to be safer, but at the same time I tried to keep the configuration practical for a small API project that mainly returns JSON responses.
 
 ---
 
-## CORS
+## Helmet.js Configuration
 
-CORS (Cross-Origin Resource Sharing) controls which external origins are permitted to make requests to the API.
+### Configuration Applied
 
-**Configuration file:** `src/config/corsOptions.ts`
+```typescript
+import helmet, { HelmetOptions } from "helmet";
+import { env } from "./env";
 
-### Configuration by Environment
+export const getHelmetConfiguration = (): HelmetOptions => {
+    const isProduction = env.nodeEnvironment === "production";
 
-#### Development (`NODE_ENV=development`)
+    return {
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        frameguard: { action: "deny" },
+        hidePoweredBy: true,
+        noSniff: true,
+        referrerPolicy: { policy: "no-referrer" },
+        hsts: isProduction
+            ? {
+                  maxAge: 31536000,
+                  includeSubDomains: true,
+                  preload: true,
+              }
+            : false,
+    };
+};
 
-| Option | Value |
-|---|---|
-| `origin` | `true` (all origins allowed) |
-| `credentials` | `false` |
-| `methods` | `GET, POST, PUT, PATCH, DELETE, OPTIONS` |
-| `allowedHeaders` | `Content-Type, Authorization` |
-| `optionsSuccessStatus` | `204` |
+export const helmetMiddleware = helmet(getHelmetConfiguration());
+```
 
-All origins are permitted in development to enable easy local testing with tools like Swagger UI, Postman, and browser-based clients without needing to whitelist individual addresses.
+### Justification
 
-#### Production (`NODE_ENV=production`)
+1. **contentSecurityPolicy: false**  
+   I disabled Content Security Policy because this project is mainly an API and not a full browser-rendered front-end. In this case, I thought it made more sense to focus on headers that are more directly useful for an API.
 
-| Option | Value |
-|---|---|
-| `origin` | `CORS_ALLOWED_ORIGINS` env variable (comma-separated list) |
-| `credentials` | `false` |
-| `methods` | `GET, POST, PUT, PATCH, DELETE, OPTIONS` |
-| `allowedHeaders` | `Content-Type, Authorization` |
-| `optionsSuccessStatus` | `204` |
+2. **crossOriginEmbedderPolicy: false**  
+   I disabled this option because the API does not need browser cross-origin isolation features. Keeping it off made the configuration simpler and easier to explain.
 
-In production the allowed origins are explicitly restricted to the list defined in the `CORS_ALLOWED_ORIGINS` environment variable. Any request from an unlisted origin is rejected by the browser before it reaches the server.
+3. **frameguard: { action: "deny" }**  
+   I enabled this so the API sends the `X-Frame-Options` header with the value `DENY`. This helps protect against clickjacking by preventing the application from being loaded inside a frame.
 
-### Why CORS
+4. **hidePoweredBy: true**  
+   I enabled this to remove the `X-Powered-By` header. Even though this is a small change, it still helps reduce unnecessary information disclosure about the server.
 
-Without a CORS policy, browsers would block cross-origin requests by default, but malicious pages could still exploit server-side state via forms and redirects. Explicitly configuring CORS ensures that only trusted origins can call the API using credentials or custom headers, reducing the risk of cross-site request forgery and data exfiltration.
+5. **noSniff: true**  
+   I enabled this so the API sends `X-Content-Type-Options: nosniff`. I chose this because it helps prevent browsers from guessing content types incorrectly.
+
+6. **referrerPolicy: { policy: "no-referrer" }**  
+   I used this setting to stop the browser from sending referrer information to other sites. I thought this was a good privacy-focused setting for the project.
+
+7. **hsts enabled only in production**  
+   I enabled HSTS only in production because it is most useful when the application is running with HTTPS. In local development, the project usually runs on HTTP, so enabling it there would not be very practical.
 
 ### Sources
 
-- MDN Web Docs — Cross-Origin Resource Sharing (CORS): https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-- OWASP CORS Security Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+1. Helmet.js Official Documentation  
+   https://helmetjs.github.io/
+
+2. MDN Web Docs — X-Content-Type-Options  
+   https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Content-Type-Options
+
+3. MDN Web Docs — X-Frame-Options  
+   https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Frame-Options
+
+4. MDN Web Docs — Strict-Transport-Security  
+   https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security
+
+5. OWASP HTTP Security Response Headers Cheat Sheet  
+   https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
+
+---
+
+## CORS Configuration
+
+### Configuration Applied
+
+```typescript
+import { CorsOptions } from "cors";
+import { env } from "./env";
+
+export const getCorsOptions = (): CorsOptions => {
+    const isDevelopment = env.nodeEnvironment === "development";
+
+    if (isDevelopment) {
+        return {
+            origin: true,
+            credentials: false,
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+            optionsSuccessStatus: 204,
+        };
+    }
+
+    return {
+        origin: env.corsAllowedOrigins,
+        credentials: false,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        optionsSuccessStatus: 204,
+    };
+};
+```
+
+### Justification
+
+1. **origin: env.corsAllowedOrigins**  
+   In production, I restricted access to only the origins listed in the environment variables. I chose this because allowing every origin would be less secure.
+
+2. **origin: true in development**  
+   During development, I allowed the incoming origin to make local testing easier. This helped when switching between different local tools and testing environments.
+
+3. **credentials: false**  
+   I kept credentials disabled because this API does not currently use browser cookies or cross-origin session handling. This made the setup simpler and easier to control.
+
+4. **methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]**  
+   I listed the methods explicitly so the configuration is more controlled. I also included `OPTIONS` because browser preflight requests need it.
+
+5. **allowedHeaders: ["Content-Type", "Authorization"]**  
+   I allowed only the headers that are commonly needed for this API. I thought this was better than leaving the configuration too open.
+
+6. **optionsSuccessStatus: 204**  
+   I used `204` for successful preflight requests because it is a clean success response without a body.
+
+### Sources
+
+1. Express CORS Middleware Documentation  
+   https://expressjs.com/en/resources/middleware/cors.html
+
+2. MDN Web Docs — CORS  
+   https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+
+3. OWASP HTTP Security Response Headers Cheat Sheet  
+   https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
+
+---
+
+## Summary
+
+Overall, I chose Helmet and CORS settings that fit the project as an API instead of just using default settings without explanation. My goal was to keep the API safer while still making local development and testing manageable.

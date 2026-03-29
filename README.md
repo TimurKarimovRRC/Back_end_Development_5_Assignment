@@ -1,125 +1,136 @@
 # Timur Karimov Resource Library API
 
-A RESTful API for managing events, built with **Express**, **TypeScript**, and **Firebase Admin SDK (Firestore)**.
-
----
-
 ## Project Overview
 
-This API provides full CRUD functionality for an event management system. It is secured with Helmet HTTP headers and environment-aware CORS, documented with Swagger UI and Redocly, and validated with Joi on all incoming requests.
+The Timur Karimov Resource Library API is a REST API built with Node.js, Express, TypeScript, Joi validation, and Firebase Firestore. The purpose of this project is to provide endpoints for managing event records in a clear and structured way.
 
-**Stack:**
-- Runtime: Node.js + TypeScript
-- Framework: Express
-- Database: Cloud Firestore (Firebase Admin SDK)
-- Documentation: Swagger UI (swagger-jsdoc + swagger-ui-express), Redocly
-- Validation: Joi
-- Security: Helmet, cors
+For this assignment, I improved the project by focusing on two main areas: API documentation and secure configuration. I added OpenAPI documentation with Swagger UI, Joi validation, environment variable support with dotenv, and custom Helmet and CORS settings. My goal was to make the project easier to understand, easier to test, and more professional overall.
 
 ---
 
-## Installation
+## Features
+
+- REST API built with Express and TypeScript
+- Firebase Firestore database integration
+- Joi validation for request bodies and route parameters
+- Local Swagger UI documentation
+- Public API documentation through GitHub Pages
+- Custom Helmet security headers
+- Custom CORS configuration
+- Environment variable support with dotenv
+
+---
+
+## Technologies Used
+
+- Node.js
+- Express
+- TypeScript
+- Firebase Admin SDK
+- Firestore
+- Joi
+- Swagger JSDoc
+- Swagger UI Express
+- Helmet
+- CORS
+- Dotenv
+
+---
+
+## Installation Instructions
 
 ### Prerequisites
 
-- Node.js v18+
-- A Firebase project with Firestore enabled (Native mode)
-- A Firebase Admin SDK service account
+Before running the project, make sure you have:
 
-### Steps
+- Node.js 20 or newer
+- npm
+- A Firebase project with Firestore enabled
+
+### Clone the project
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/TimurKarimovRRC/Back_end_Development_5_Assignment.git
+git clone <YOUR_REPOSITORY_URL>
 cd Back_end_Development_5_Assignment
+```
 
-# 2. Install dependencies
+### Install dependencies
+
+```bash
 npm install
-
-# 3. Configure environment variables
-cp .env.example .env
-# Edit .env and fill in your Firebase credentials and port
 ```
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
+Create a `.env` file in the project root using `.env.example` as a guide.
+
+Example `.env.example`:
 
 ```env
-# Server
-PORT=3001
 NODE_ENV=development
-
-# CORS — comma-separated list of allowed origins (production only)
-CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com
-
-# Firebase Admin SDK
-FIREBASE_PROJECT_ID=your-firebase-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n"
+PORT=3001
+CORS_ALLOWED_ORIGINS=http://localhost:3001,http://127.0.0.1:5500
+SWAGGER_SERVER_URL=http://localhost:3001
 ```
 
-> The `FIREBASE_PRIVATE_KEY` must have literal `\n` in the `.env` file. The app replaces them with real newlines at startup.
+If you are using a Firebase service account JSON file for local development, keep it local only and make sure it stays in `.gitignore`.
 
----
-
-## Running the Server
+### Start the server
 
 ```bash
-# Development (ts-node-dev with auto-reload)
 npm run dev
+```
 
-# Production (compile then run)
+### Build and run the compiled project
+
+```bash
 npm run build
 npm start
 ```
 
-The server starts on the port defined in `PORT` (default: `3001`).
-
 ---
 
-## API Documentation
+## Local Documentation Access
 
-| Environment | URL |
-|---|---|
-| Local | http://localhost:3001/api-docs |
-| Public | https://timurkarimovrrc.github.io/Back_end_Development_5_Assignment/ |
+When the server is running locally, the Swagger UI documentation is available at:
 
----
-
-## API Examples
-
-### 1. Create an Event
-
-**Request**
-```http
-POST /api/v1/events
-Content-Type: application/json
-
-{
-  "name": "Spring Tech Meetup",
-  "date": "2026-04-15T18:00:00.000Z",
-  "capacity": 100,
-  "status": "active",
-  "category": "meetup"
-}
+```text
+http://localhost:3001/api-docs
 ```
 
-**Response `201 Created`**
+---
+
+## Public Documentation
+
+The public API documentation is available through GitHub Pages at:
+
+```text
+https://timurkarimovrrc.github.io/Back_end_Development_5_Assignment/
+```
+
+If the final deployed URL changes, this link should be updated before submission.
+
+---
+
+## API Request Examples
+
+### 1. Health Check
+
+**Request**
+
+```bash
+curl -X GET http://localhost:3001/api/v1/health \
+  -H "Accept: application/json"
+```
+
+**Response (200 OK)**
+
 ```json
 {
-  "message": "Event created successfully",
-  "data": {
-    "id": "oCalLqGjifnuNmhnEqVJ",
-    "name": "Spring Tech Meetup",
-    "date": "2026-04-15T18:00:00.000Z",
-    "capacity": 100,
-    "registrationCount": 0,
-    "status": "active",
-    "category": "meetup",
-    "createdAt": "2026-03-29T06:14:11.341Z",
-    "updatedAt": "2026-03-29T06:14:11.341Z"
-  }
+  "status": "ok",
+  "uptime": 123.456,
+  "timestamp": "2026-03-29T01:00:00.000Z",
+  "version": "v1"
 }
 ```
 
@@ -128,25 +139,24 @@ Content-Type: application/json
 ### 2. Get All Events
 
 **Request**
-```http
-GET /api/v1/events
+
+```bash
+curl -X GET http://localhost:3001/api/v1/events \
+  -H "Accept: application/json"
 ```
 
-**Response `200 OK`**
+**Response (200 OK)**
+
 ```json
 {
   "message": "Events retrieved successfully",
   "data": [
     {
-      "id": "oCalLqGjifnuNmhnEqVJ",
-      "name": "Spring Tech Meetup",
-      "date": "2026-04-15T18:00:00.000Z",
-      "capacity": 100,
-      "registrationCount": 0,
-      "status": "active",
-      "category": "meetup",
-      "createdAt": "2026-03-29T06:14:11.341Z",
-      "updatedAt": "2026-03-29T06:14:11.341Z"
+      "id": "67fa0f5c2f7d4f7f8d07c123",
+      "title": "Spring Tech Meetup",
+      "description": "Community meetup for developers and students",
+      "eventDate": "2026-04-15T18:00:00.000Z",
+      "location": "Winnipeg Innovation Centre"
     }
   ]
 }
@@ -154,83 +164,104 @@ GET /api/v1/events
 
 ---
 
-### 3. Get Event by ID
+### 3. Create Event
 
 **Request**
-```http
-GET /api/v1/events/oCalLqGjifnuNmhnEqVJ
+
+```bash
+curl -X POST http://localhost:3001/api/v1/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Tech Meetup",
+    "description": "Community meetup for developers and students",
+    "eventDate": "2026-12-01T10:00:00.000Z",
+    "location": "Winnipeg"
+  }'
 ```
 
-**Response `200 OK`**
+**Response (201 Created)**
+
+```json
+{
+  "message": "Event created successfully",
+  "data": {
+    "id": "67fa0f5c2f7d4f7f8d07c123",
+    "title": "Tech Meetup",
+    "description": "Community meetup for developers and students",
+    "eventDate": "2026-12-01T10:00:00.000Z",
+    "location": "Winnipeg"
+  }
+}
+```
+
+---
+
+### 4. Get Event by ID
+
+**Request**
+
+```bash
+curl -X GET http://localhost:3001/api/v1/events/67fa0f5c2f7d4f7f8d07c123 \
+  -H "Accept: application/json"
+```
+
+**Response (200 OK)**
+
 ```json
 {
   "message": "Event retrieved successfully",
   "data": {
-    "id": "oCalLqGjifnuNmhnEqVJ",
-    "name": "Spring Tech Meetup",
-    "date": "2026-04-15T18:00:00.000Z",
-    "capacity": 100,
-    "registrationCount": 0,
-    "status": "active",
-    "category": "meetup",
-    "createdAt": "2026-03-29T06:14:11.341Z",
-    "updatedAt": "2026-03-29T06:14:11.341Z"
+    "id": "67fa0f5c2f7d4f7f8d07c123",
+    "title": "Tech Meetup",
+    "description": "Community meetup for developers and students",
+    "eventDate": "2026-12-01T10:00:00.000Z",
+    "location": "Winnipeg"
   }
-}
-```
-
-**Response `404 Not Found`**
-```json
-{
-  "error": "Event not found"
 }
 ```
 
 ---
 
-### 4. Update an Event
+### 5. Update Event
 
 **Request**
-```http
-PUT /api/v1/events/oCalLqGjifnuNmhnEqVJ
-Content-Type: application/json
 
-{
-  "name": "Spring Tech Meetup Updated",
-  "capacity": 150,
-  "status": "active",
-  "category": "workshop"
-}
+```bash
+curl -X PUT http://localhost:3001/api/v1/events/67fa0f5c2f7d4f7f8d07c123 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "location": "RRC Polytech Exchange District Campus"
+  }'
 ```
 
-**Response `200 OK`**
+**Response (200 OK)**
+
 ```json
 {
   "message": "Event updated successfully",
   "data": {
-    "id": "oCalLqGjifnuNmhnEqVJ",
-    "name": "Spring Tech Meetup Updated",
-    "date": "2026-04-15T18:00:00.000Z",
-    "capacity": 150,
-    "registrationCount": 0,
-    "status": "active",
-    "category": "workshop",
-    "createdAt": "2026-03-29T06:14:11.341Z",
-    "updatedAt": "2026-03-29T06:20:00.000Z"
+    "id": "67fa0f5c2f7d4f7f8d07c123",
+    "title": "Tech Meetup",
+    "description": "Community meetup for developers and students",
+    "eventDate": "2026-12-01T10:00:00.000Z",
+    "location": "RRC Polytech Exchange District Campus"
   }
 }
 ```
 
 ---
 
-### 5. Delete an Event
+### 6. Delete Event
 
 **Request**
-```http
-DELETE /api/v1/events/oCalLqGjifnuNmhnEqVJ
+
+```bash
+curl -X DELETE http://localhost:3001/api/v1/events/67fa0f5c2f7d4f7f8d07c123 \
+  -H "Accept: application/json"
 ```
 
-**Response `200 OK`**
+**Response (200 OK)**
+
 ```json
 {
   "message": "Event deleted successfully"
@@ -239,6 +270,70 @@ DELETE /api/v1/events/oCalLqGjifnuNmhnEqVJ
 
 ---
 
-## Security
+## Validation Behavior
 
-See [SECURITY.md](./SECURITY.md) for details on Helmet and CORS configuration.
+This API uses Joi validation middleware for request body and route parameter validation. If validation fails, the API returns a `400 Bad Request` response with a list of validation messages.
+
+Example:
+
+```json
+{
+  "message": "Validation failed",
+  "errors": [
+    "\"title\" is required",
+    "\"eventDate\" must be in ISO 8601 date format"
+  ]
+}
+```
+
+---
+
+## Security Notes
+
+This project uses:
+- custom Helmet configuration for security headers
+- custom CORS configuration
+- environment variables with dotenv
+- Firestore credentials kept outside the public repository
+
+A more detailed explanation of the security choices is available in:
+
+```text
+SECURITY.md
+```
+
+---
+
+## Project Structure
+
+```text
+src/
+  api/v1/
+    controllers/
+    middleware/
+    models/
+    repositories/
+    routes/
+    services/
+    validation/
+  config/
+    corsOptions.ts
+    env.ts
+    helmetOptions.ts
+    swagger.ts
+    swaggerOptions.ts
+  app.ts
+  server.ts
+scripts/
+  generate-openapi.ts
+docs/
+  index.html
+```
+
+---
+
+## Author
+
+Timur Karimov  
+RRC Polytech  
+Student ID: <STUDENT_ID>
