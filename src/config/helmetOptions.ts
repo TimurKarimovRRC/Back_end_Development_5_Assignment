@@ -1,5 +1,5 @@
 import helmet, { HelmetOptions } from "helmet";
-import { env } from "../env";
+import { env } from "./env";
 
 export const getHelmetConfiguration = (): HelmetOptions => {
     const isProduction = env.nodeEnvironment === "production";
