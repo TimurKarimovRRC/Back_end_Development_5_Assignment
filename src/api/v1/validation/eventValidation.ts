@@ -10,59 +10,85 @@ import { RequestValidationSchemas } from "../middleware/validateRequest";
  *       properties:
  *         id:
  *           type: string
- *           example: 67fa0f5c2f7d4f7f8d07c123
- *         title:
+ *           example: aB3dEfGhIjKlMnOpQrSt
+ *         name:
  *           type: string
  *           example: Spring Tech Meetup
- *         description:
- *           type: string
- *           example: Community meetup for developers and students
- *         eventDate:
+ *         date:
  *           type: string
  *           format: date-time
  *           example: 2026-04-15T18:00:00.000Z
- *         location:
+ *         capacity:
+ *           type: integer
+ *           example: 100
+ *         registrationCount:
+ *           type: integer
+ *           example: 0
+ *         status:
  *           type: string
- *           example: Winnipeg Innovation Centre
+ *           enum: [active, cancelled, completed]
+ *           example: active
+ *         category:
+ *           type: string
+ *           enum: [conference, workshop, meetup, seminar, general]
+ *           example: meetup
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  *
  *     CreateEventRequest:
  *       type: object
  *       required:
- *         - title
- *         - description
- *         - eventDate
- *         - location
+ *         - name
+ *         - date
+ *         - capacity
  *       properties:
- *         title:
+ *         name:
  *           type: string
  *           example: Spring Tech Meetup
- *         description:
- *           type: string
- *           example: Community meetup for developers and students
- *         eventDate:
+ *         date:
  *           type: string
  *           format: date-time
  *           example: 2026-04-15T18:00:00.000Z
- *         location:
+ *         capacity:
+ *           type: integer
+ *           example: 100
+ *         status:
  *           type: string
- *           example: Winnipeg Innovation Centre
+ *           enum: [active, cancelled, completed]
+ *           example: active
+ *         category:
+ *           type: string
+ *           enum: [conference, workshop, meetup, seminar, general]
+ *           example: meetup
  *
  *     UpdateEventRequest:
  *       type: object
  *       properties:
- *         title:
+ *         name:
  *           type: string
  *           example: Spring Tech Meetup Updated
- *         description:
- *           type: string
- *           example: Updated meetup details for students and developers
- *         eventDate:
+ *         date:
  *           type: string
  *           format: date-time
  *           example: 2026-04-16T18:00:00.000Z
- *         location:
+ *         capacity:
+ *           type: integer
+ *           example: 150
+ *         registrationCount:
+ *           type: integer
+ *           example: 10
+ *         status:
  *           type: string
- *           example: RRC Polytech Exchange District Campus
+ *           enum: [active, cancelled, completed]
+ *           example: active
+ *         category:
+ *           type: string
+ *           enum: [conference, workshop, meetup, seminar, general]
+ *           example: workshop
  *
  *     ValidationErrorResponse:
  *       type: object
@@ -75,8 +101,8 @@ import { RequestValidationSchemas } from "../middleware/validateRequest";
  *           items:
  *             type: string
  *           example:
- *             - "\"title\" is required"
- *             - "\"eventDate\" must be in ISO 8601 date format"
+ *             - "\"name\" is required"
+ *             - "\"date\" must be in ISO 8601 date format"
  *
  *     EventListResponse:
  *       type: object
@@ -107,41 +133,50 @@ import { RequestValidationSchemas } from "../middleware/validateRequest";
  */
 
 const objectIdSchema = Joi.string()
-    .pattern(/^[a-fA-F0-9]{24}$/)
+    .pattern(/^[a-zA-Z0-9]{20}$/)
     .messages({
         "string.empty": "\"id\" is required",
-        "string.pattern.base": "\"id\" must be a valid 24-character hex string",
+        "string.pattern.base": "\"id\" must be a valid Firestore document ID",
     });
 
-const titleSchema = Joi.string().trim().min(3).max(100).messages({
-    "string.empty": "\"title\" is required",
-    "string.min": "\"title\" must be at least 3 characters long",
-    "string.max": "\"title\" must be at most 100 characters long",
+const nameSchema = Joi.string().trim().min(3).max(100).messages({
+    "string.empty": "\"name\" is required",
+    "string.min": "\"name\" must be at least 3 characters long",
+    "string.max": "\"name\" must be at most 100 characters long",
 });
 
-const descriptionSchema = Joi.string().trim().min(10).max(500).messages({
-    "string.empty": "\"description\" is required",
-    "string.min": "\"description\" must be at least 10 characters long",
-    "string.max": "\"description\" must be at most 500 characters long",
+const dateSchema = Joi.string().isoDate().messages({
+    "string.empty": "\"date\" is required",
+    "string.isoDate": "\"date\" must be in ISO 8601 date format",
 });
 
-const eventDateSchema = Joi.string().isoDate().messages({
-    "string.empty": "\"eventDate\" is required",
-    "string.isoDate": "\"eventDate\" must be in ISO 8601 date format",
+const capacitySchema = Joi.number().integer().min(1).messages({
+    "number.base": "\"capacity\" must be a number",
+    "number.integer": "\"capacity\" must be an integer",
+    "number.min": "\"capacity\" must be at least 1",
 });
 
-const locationSchema = Joi.string().trim().min(2).max(120).messages({
-    "string.empty": "\"location\" is required",
-    "string.min": "\"location\" must be at least 2 characters long",
-    "string.max": "\"location\" must be at most 120 characters long",
+const statusSchema = Joi.string().valid("active", "cancelled", "completed").messages({
+    "any.only": "\"status\" must be one of: active, cancelled, completed",
+});
+
+const categorySchema = Joi.string().valid("conference", "workshop", "meetup", "seminar", "general").messages({
+    "any.only": "\"category\" must be one of: conference, workshop, meetup, seminar, general",
+});
+
+const registrationCountSchema = Joi.number().integer().min(0).messages({
+    "number.base": "\"registrationCount\" must be a number",
+    "number.integer": "\"registrationCount\" must be an integer",
+    "number.min": "\"registrationCount\" must be at least 0",
 });
 
 export const createEventValidation: RequestValidationSchemas = {
     body: Joi.object({
-        title: titleSchema.required(),
-        description: descriptionSchema.required(),
-        eventDate: eventDateSchema.required(),
-        location: locationSchema.required(),
+        name: nameSchema.required(),
+        date: dateSchema.required(),
+        capacity: capacitySchema.required(),
+        status: statusSchema.optional(),
+        category: categorySchema.optional(),
     }),
 };
 
@@ -150,10 +185,12 @@ export const updateEventValidation: RequestValidationSchemas = {
         id: objectIdSchema.required(),
     }),
     body: Joi.object({
-        title: titleSchema.optional(),
-        description: descriptionSchema.optional(),
-        eventDate: eventDateSchema.optional(),
-        location: locationSchema.optional(),
+        name: nameSchema.optional(),
+        date: dateSchema.optional(),
+        capacity: capacitySchema.optional(),
+        registrationCount: registrationCountSchema.optional(),
+        status: statusSchema.optional(),
+        category: categorySchema.optional(),
     })
         .min(1)
         .messages({

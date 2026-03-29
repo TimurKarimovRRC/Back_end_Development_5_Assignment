@@ -51,7 +51,7 @@ eventRoutes.get("/", getAllEventsController);
  *         description: The unique ID of the event
  *         schema:
  *           type: string
- *           example: 67fa0f5c2f7d4f7f8d07c123
+ *           example: aB3dEfGhIjKlMnOpQrSt
  *     responses:
  *       200:
  *         description: Event retrieved successfully
@@ -127,7 +127,7 @@ eventRoutes.post(
  *         description: The unique ID of the event
  *         schema:
  *           type: string
- *           example: 67fa0f5c2f7d4f7f8d07c123
+ *           example: aB3dEfGhIjKlMnOpQrSt
  *     requestBody:
  *       required: true
  *       content:
@@ -173,7 +173,7 @@ eventRoutes.put(
  *         description: The unique ID of the event
  *         schema:
  *           type: string
- *           example: 67fa0f5c2f7d4f7f8d07c123
+ *           example: aB3dEfGhIjKlMnOpQrSt
  *     responses:
  *       200:
  *         description: Event deleted successfully

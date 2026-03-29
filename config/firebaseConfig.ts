@@ -1,16 +1,19 @@
-import { initializeApp, cert, ServiceAccount } from "firebase-admin/app";
+import { initializeApp, cert, getApps, App } from "firebase-admin/app";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { ServiceAccount } from "firebase-admin";
 
-import * as serviceAccount from "../assingment5-f3ea7-firebase-adminsdk-fbsvc-8e3c510c3f.json";
+import serviceAccount from "../assingment5-f3ea7-firebase-adminsdk-fbsvc-8e3c510c3f.json";
 
-// Initialize the Firebase app with the service account credentials
-// This step is necessary before you can use any Firebase services
-initializeApp({
-    credential: cert(serviceAccount as ServiceAccount),
-});
+let firebaseApplication: App;
 
-// Get a reference to the Firestore service
-// This creates a Firestore instance that you can use to interact with your database
-const db: Firestore = getFirestore();
+if (!getApps().length) {
+    firebaseApplication = initializeApp({
+        credential: cert(serviceAccount as ServiceAccount),
+    });
+} else {
+    firebaseApplication = getApps()[0] as App;
+}
+
+const db: Firestore = getFirestore(firebaseApplication);
 
 export { db };
