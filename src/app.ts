@@ -1,6 +1,6 @@
 import express from "express";
-import { healthRoutes } from "./api/v1/routes/healthRoutes";
-import { eventRoutes } from "./api/v1/routes/eventRoutes";
+import healthRoutes  from "./api/v1/routes/healthRoutes";
+import eventRoutes from "./api/v1/routes/eventRoutes";
 
 export const app = express();
 
