@@ -1,20 +1,19 @@
-import { Options } from "swagger-jsdoc";
-import { env } from "./env";
+import { Express } from "express";
+import swaggerUi from "swagger-ui-express";
+import swaggerJSDoc from "swagger-jsdoc";
+import { swaggerOptions } from "./swaggerOptions";
 
-export const swaggerOptions: Options = {
-    definition: {
-        openapi: "3.0.3",
-        info: {
-            title: "Timur Karimov Resource Library API",
-            version: "1.0.0",
-            description: "API documentation created by Timur Karimov",
-        },
-        servers: [
-            {
-                url: `http://localhost:${env.port}`,
-                description: "Local server",
-            },
-        ],
-    },
-    apis: ["./src/api/v1/routes/*.ts", "./src/api/v1/validation/*.ts"],
+export const swaggerSpecification = swaggerJSDoc(swaggerOptions);
+
+const setupSwagger = (app: Express): void => {
+    app.use(
+        "/api-docs",
+        swaggerUi.serve,
+        swaggerUi.setup(swaggerSpecification, {
+            customSiteTitle: "Timur Karimov API Docs",
+            customCss: ".swagger-ui .topbar { display: none }",
+        })
+    );
 };
+
+export default setupSwagger;
