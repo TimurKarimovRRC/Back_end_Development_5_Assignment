@@ -34,6 +34,10 @@ jobs:
 
       - name: Generate documentation
         run: npm run generate-docs
+        env:
+          NODE_ENV: development
+          PORT: 3001
+          CORS_ALLOWED_ORIGINS: http://localhost:3001
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
