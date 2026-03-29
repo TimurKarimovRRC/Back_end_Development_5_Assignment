@@ -1,62 +1,211 @@
 import Joi from "joi";
+import { RequestValidationSchemas } from "../middleware/validateRequest";
 
-const allowedStatuses = ["active", "cancelled", "completed"] as const;
-const allowedCategories = ["conference", "workshop", "meetup", "seminar", "general"] as const;
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Event:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: aB3dEfGhIjKlMnOpQrSt
+ *         name:
+ *           type: string
+ *           example: Spring Tech Meetup
+ *         date:
+ *           type: string
+ *           format: date-time
+ *           example: 2026-04-15T18:00:00.000Z
+ *         capacity:
+ *           type: integer
+ *           example: 100
+ *         registrationCount:
+ *           type: integer
+ *           example: 0
+ *         status:
+ *           type: string
+ *           enum: [active, cancelled, completed]
+ *           example: active
+ *         category:
+ *           type: string
+ *           enum: [conference, workshop, meetup, seminar, general]
+ *           example: meetup
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *
+ *     CreateEventRequest:
+ *       type: object
+ *       required:
+ *         - name
+ *         - date
+ *         - capacity
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: Spring Tech Meetup
+ *         date:
+ *           type: string
+ *           format: date-time
+ *           example: 2026-04-15T18:00:00.000Z
+ *         capacity:
+ *           type: integer
+ *           example: 100
+ *         status:
+ *           type: string
+ *           enum: [active, cancelled, completed]
+ *           example: active
+ *         category:
+ *           type: string
+ *           enum: [conference, workshop, meetup, seminar, general]
+ *           example: meetup
+ *
+ *     UpdateEventRequest:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: Spring Tech Meetup Updated
+ *         date:
+ *           type: string
+ *           format: date-time
+ *           example: 2026-04-16T18:00:00.000Z
+ *         capacity:
+ *           type: integer
+ *           example: 150
+ *         registrationCount:
+ *           type: integer
+ *           example: 10
+ *         status:
+ *           type: string
+ *           enum: [active, cancelled, completed]
+ *           example: active
+ *         category:
+ *           type: string
+ *           enum: [conference, workshop, meetup, seminar, general]
+ *           example: workshop
+ *
+ *     ValidationErrorResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Validation failed
+ *         errors:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example:
+ *             - "\"name\" is required"
+ *             - "\"date\" must be in ISO 8601 date format"
+ *
+ *     EventListResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Events retrieved successfully
+ *         data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Event'
+ *
+ *     EventSingleResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Event retrieved successfully
+ *         data:
+ *           $ref: '#/components/schemas/Event'
+ *
+ *     EventDeleteResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Event deleted successfully
+ */
 
-function isFutureIsoDate(value: string): boolean {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return false;
+const objectIdSchema = Joi.string()
+    .pattern(/^[a-zA-Z0-9]{20}$/)
+    .messages({
+        "string.empty": "\"id\" is required",
+        "string.pattern.base": "\"id\" must be a valid Firestore document ID",
+    });
 
-  const now = new Date();
-  return parsed.getTime() > now.getTime();
-}
-
-export const createEventSchema: Joi.ObjectSchema = Joi.object({
-  name: Joi.string().min(3).max(80).required().messages({
-    "any.required": "name is required",
-    "string.base": "name must be a string",
-    "string.min": "name must be at least 3 characters long",
-    "string.max": "name must be less than or equal to 80 characters long"
-  }),
-
-  date: Joi.string().isoDate().required().custom((value, helpers) => {
-    if (!isFutureIsoDate(value)) {
-      return helpers.error("date.future");
-    }
-    return value;
-  }).messages({
-    "any.required": "date is required",
-    "string.isoDate": "date must be a valid ISO date",
-    "date.future": "date must be in the future"
-  }),
-
-  capacity: Joi.number().integer().min(5).required().messages({
-    "any.required": "capacity is required",
-    "number.base": "capacity must be a number",
-    "number.integer": "capacity must be an integer",
-    "number.min": "capacity must be at least 5"
-  }),
-
-  registrationCount: Joi.number().integer().min(0).default(0).messages({
-    "number.base": "registrationCount must be a number",
-    "number.integer": "registrationCount must be an integer",
-    "number.min": "registrationCount must be at least 0"
-  }),
-
-  status: Joi.string().valid(...allowedStatuses).default("active").messages({
-    "any.only": "status must be one of: active, cancelled, completed"
-  }),
-
-  category: Joi.string().valid(...allowedCategories).default("general").messages({
-    "any.only": "category must be one of: conference, workshop, meetup, seminar, general"
-  })
-}).custom((value, helpers) => {
-  if (typeof value.registrationCount === "number" && typeof value.capacity === "number") {
-    if (value.registrationCount > value.capacity) {
-      return helpers.error("registrationCount.exceedsCapacity");
-    }
-  }
-  return value;
-}).messages({
-  "registrationCount.exceedsCapacity": "registrationCount cannot exceed capacity"
+const nameSchema = Joi.string().trim().min(3).max(100).messages({
+    "string.empty": "\"name\" is required",
+    "string.min": "\"name\" must be at least 3 characters long",
+    "string.max": "\"name\" must be at most 100 characters long",
 });
+
+const dateSchema = Joi.string().isoDate().messages({
+    "string.empty": "\"date\" is required",
+    "string.isoDate": "\"date\" must be in ISO 8601 date format",
+});
+
+const capacitySchema = Joi.number().integer().min(1).messages({
+    "number.base": "\"capacity\" must be a number",
+    "number.integer": "\"capacity\" must be an integer",
+    "number.min": "\"capacity\" must be at least 1",
+});
+
+const statusSchema = Joi.string().valid("active", "cancelled", "completed").messages({
+    "any.only": "\"status\" must be one of: active, cancelled, completed",
+});
+
+const categorySchema = Joi.string().valid("conference", "workshop", "meetup", "seminar", "general").messages({
+    "any.only": "\"category\" must be one of: conference, workshop, meetup, seminar, general",
+});
+
+const registrationCountSchema = Joi.number().integer().min(0).messages({
+    "number.base": "\"registrationCount\" must be a number",
+    "number.integer": "\"registrationCount\" must be an integer",
+    "number.min": "\"registrationCount\" must be at least 0",
+});
+
+export const createEventValidation: RequestValidationSchemas = {
+    body: Joi.object({
+        name: nameSchema.required(),
+        date: dateSchema.required(),
+        capacity: capacitySchema.required(),
+        status: statusSchema.optional(),
+        category: categorySchema.optional(),
+    }),
+};
+
+export const updateEventValidation: RequestValidationSchemas = {
+    params: Joi.object({
+        id: objectIdSchema.required(),
+    }),
+    body: Joi.object({
+        name: nameSchema.optional(),
+        date: dateSchema.optional(),
+        capacity: capacitySchema.optional(),
+        registrationCount: registrationCountSchema.optional(),
+        status: statusSchema.optional(),
+        category: categorySchema.optional(),
+    })
+        .min(1)
+        .messages({
+            "object.min": "At least one field must be provided for update",
+        }),
+};
+
+export const getEventByIdValidation: RequestValidationSchemas = {
+    params: Joi.object({
+        id: objectIdSchema.required(),
+    }),
+};
+
+export const deleteEventValidation: RequestValidationSchemas = {
+    params: Joi.object({
+        id: objectIdSchema.required(),
+    }),
+};
