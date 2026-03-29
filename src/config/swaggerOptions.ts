@@ -1,7 +1,8 @@
-import { Options } from "swagger-jsdoc";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const swaggerJSDoc = require("swagger-jsdoc") as (options: object) => object;
 import { env } from "./env";
 
-export const swaggerOptions: Options = {
+export const swaggerOptions = {
     definition: {
         openapi: "3.0.3",
         info: {
@@ -18,3 +19,5 @@ export const swaggerOptions: Options = {
     },
     apis: ["./src/api/v1/routes/*.ts", "./src/api/v1/validation/*.ts"],
 };
+
+export const generateSwaggerSpec = (): object => swaggerJSDoc(swaggerOptions);
