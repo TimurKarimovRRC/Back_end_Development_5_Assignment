@@ -50,7 +50,7 @@ Before running the project, make sure you have:
 ### Clone the project
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/TimurKarimovRRC/Back_end_Development_5_Assignment
 cd Back_end_Development_5_Assignment
 ```
 
@@ -107,9 +107,6 @@ The public API documentation is available through GitHub Pages at:
 ```text
 https://timurkarimovrrc.github.io/Back_end_Development_5_Assignment/
 ```
-
-If the final deployed URL changes, this link should be updated before submission.
-
 ---
 
 ## API Request Examples
